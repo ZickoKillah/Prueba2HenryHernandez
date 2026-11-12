@@ -10,7 +10,7 @@ public class Spikes : MonoBehaviour
         if (player != null)
         {
             Vector2 direction = (transform.position - other.transform.position).normalized;
-            player.Hurt(direction * knockbackForce);
+            player.Hurt(direction * - knockbackForce);
         }
     }
 }
