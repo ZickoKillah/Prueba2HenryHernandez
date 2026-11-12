@@ -24,4 +24,5 @@ public class PlayerColorChanger : MonoBehaviour
             spriteRenderer.color = Color.blue;
         }
     }
+   
 }

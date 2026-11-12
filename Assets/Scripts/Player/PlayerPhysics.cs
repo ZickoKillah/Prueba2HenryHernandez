@@ -10,6 +10,7 @@ public enum PlayerState
     Jumping,
     Firing,
     Hurt,
+    Stun
 }
 
 [RequireComponent(typeof(Rigidbody2D))]
@@ -31,10 +32,20 @@ public class PlayerPhysics : MonoBehaviour
     [Header("Bullet")]
     [SerializeField] Transform bulletSpawner;
     [SerializeField] Bullet bulletPrefab;
+    [Header("Sprite")]
+    [SerializeField] SpriteRenderer spriteRenderer;
+
+    [SerializeField] private Color originalColor;
+    
+    [Header ("Timer")]
+    [SerializeField] float stunTimer;
+    [SerializeField] float stunDuration = 1f;
 
     float horizontalSpeed;
     Vector2 velocity;
     Vector2 knockbackVelocity;
+
+  
 
     float initialGravity;
     bool isGrounded;
@@ -48,18 +59,21 @@ public class PlayerPhysics : MonoBehaviour
     State jumpingState;
     State firingState;
     State hurtState;
+    State stunState;
 
     void Awake()
     {
         initialGravity = rigidBody2D.gravityScale;
         direction = 1;
         bulletSpawnerInitialPosition = bulletSpawner.localPosition;
+        spriteRenderer = GetComponent<SpriteRenderer>();
 
         idleState = CreateState(PlayerState.Idle, IdleEnter, IdleUpdate, IdleExit);
         movementState = CreateState(PlayerState.GroundedMovement, MovementEnter, MovementUpdate, MovementExit);
         jumpingState = CreateState(PlayerState.Jumping, JumpEnter, JumpUpdate, JumpExit);
         firingState = CreateState(PlayerState.Firing, FiringEnter, null, null);
         hurtState = CreateState(PlayerState.Hurt, HurtEnter, null, HurtExit);
+        stunState = CreateState(PlayerState.Stun, StunEnter, StunUpdate, StunExit);
 
         stateMachine = new StateMachine();
         stateMachine.AddState(idleState);
@@ -67,6 +81,7 @@ public class PlayerPhysics : MonoBehaviour
         stateMachine.AddState(jumpingState);
         stateMachine.AddState(firingState);
         stateMachine.AddState(hurtState);
+        stateMachine.AddState(stunState);
     }
 
     void OnEnable()
@@ -98,6 +113,11 @@ public class PlayerPhysics : MonoBehaviour
     {
         knockbackVelocity = knockback;
         ChangeState(PlayerState.Hurt);
+    }
+    public void Stun()
+    {
+       ChangeState(PlayerState.Stun);
+        
     }
 
     void IdleEnter()
@@ -180,6 +200,32 @@ public class PlayerPhysics : MonoBehaviour
 
         velocity.y = 0.0f;
         canJump = false;
+    }
+
+    void StunEnter()
+    {
+        velocity.x = 0.0f;
+        canJump = false;
+        spriteRenderer.color = Color.yellow;
+        Debug.Log("Stun Enter");
+    }
+
+    void StunUpdate()
+    {   
+        velocity.x = 0.0f;    
+        stunTimer += Time.deltaTime;
+        if (stunTimer >= stunDuration)
+        {
+            ChangeState(PlayerState.Idle);
+        }
+        Debug.Log("Stun Update");
+        
+    }
+    void StunExit()
+    {
+        spriteRenderer.color = Color.white;
+        Debug.Log("Stun Exit");
+
     }
 
     void FiringEnter()
@@ -273,9 +319,13 @@ public class PlayerPhysics : MonoBehaviour
         ChangeState(PlayerState.Firing);
     }
 
+   
+    
+
     void Update()
     {
         stateMachine.UpdateState();
+        
     }
 
     void FixedUpdate()
